@@ -30,7 +30,7 @@ class KnownValues (unittest.TestCase):
       # no arguments returns a simple default
       [[],({'sort': 'total_load'}, [1], [1], [[16, [[16]]], [24, [[24]]], [32, [[32]]]])],
       # make sure you can reset search order, use ranges for sets, manually define load
-      [['-o','weight_load','-s','1-2','-l','5,10'],({'sort': 'weight_load'}, [1,2], [1], [[16, [[16]]], [24, [[24]]], [32, [[32]]]])],
+      [['-o','weight_load','-s','1-2','-l','5,10'],({'sort': 'weight_load'}, [1,2], [1], [[5.0, [[5.0]]], [10.0, [[10.0]]]])],
       # barbell mode simple
       [['-b','18'],({'sort': 'total_load'}, [1], [1], [[18, [[18]]]])],
       # barbell mode than one solution
@@ -41,21 +41,52 @@ class KnownValues (unittest.TestCase):
       [['-l','10-12'],({'sort': 'total_load'}, [1], [1], [[10, [[10]]], [11, [[11]]], [12, [[12]]]])],
       ],
     'barbellOptions':[
+      [10,[],[[10,[[10]]]]],
+      [10,[5],[[10,[[10]]],[20,[[10,5,5]]]]],
+      [18,[10,5,5],[[18, [[18]]], [28, [[18,5,5]]], [38, [[18,5,5,5,5],[18,10,10]]],[48, [[18,10,5,10,5]]],[58,[[18,10,5,5,10,5,5]]]]],
       ],
     'dumbellOptions':[
+      [2.5,[2.5,5],[[5.0,[[2.5,2.5]]],[15.0,[[2.5,2.5,2.5,2.5,2.5,2.5]]],[25.0,[[2.5,2.5,5,5,5,5]]],[35.0,[[2.5,2.5,5,2.5,5,2.5,5,2.5,5,2.5]]]]],
       ],
     'weightLoadOptions':[
+      [[1],[[1,[[1]]]]],
+      [[2,5],[[2,[[2]]],[5,[[5]]],[7,[[5,2]]]]],
+      [[1,1,2],[[1,[[1]]],[2,[[1,1],[2]]],[3,[[2,1]]],[4,[[2,1,1]]]]],
       ],
     'simpleLoadOptions':[
-      ['5,10',[[5,[5]],[10,[10]]]],
-      [['2-3'],[[2,[2]],[3,[3]]]],
+      [[5,10],[[5,[[5]]],[10,[[10]]]]],
+      [[2,3],[[2,[[2]]],[3,[[3]]]]],
       ],
     'parseNumbers':[
       ['1,5,7',True,[1,5,7]],
       ['1-3,7',True,[1,2,3,7]],
       ['2.5,5.5',False,[2.5,5.5]],
       ],
+    'uniqueList':[
+      [[1,2,2,3,3,3],[1,2,3]],
+      [[3,2,3,1,3,2],[3,2,1]],
+      [[[4,3],[1,2],[4,3]],[[4,3],[1,2]]],
+      [[5,6,7],[5,6,7]],
+      ],
+    'plateConfigs':[
+      [[0],[[0]]],
+      [[1,2],[[1],[2],[2,1]]],
+      [[3,3],[[3],[3,3]]],
+      ],
     }
+
+  def testUniqueList (self):
+    """confirming a list of non-unique items returns a unique list,
+    even when the list of lists"""
+    for data in self.known_values['uniqueList']:
+      result = lc.uniqueList(data[0])
+      self.assertEqual(result,data[1])
+
+  def testPlateConfigs (self):
+    """test that we do generate all expected combinations of plates"""
+    for data in self.known_values['plateConfigs']:
+      result = lc.plateConfigs(data[0])
+      self.assertEqual(result,data[1])
 
   def testParseNumbers (self):
     """confirming that the parsing of numbers works"""
@@ -71,7 +102,7 @@ class KnownValues (unittest.TestCase):
       result = lc.simpleLoadOptions(data[0])
       self.assertEqual(result,data[1])
 
-  def testLoadOptions (self):
+  def testWeightLoadOptions (self):
     """confirming we generate sane generic loads from plates"""
     for data in self.known_values['weightLoadOptions']:
       print "d:", data[0], data[1]
@@ -95,7 +126,7 @@ class KnownValues (unittest.TestCase):
   def testLoadCommandLine (self):
     """confirming that ability to command line functionality works"""
     for data in self.known_values['loadCommandLine']:
-      print "d:", data[0], data[1]
+      print "d: lCL:", data[0], data[1]
       result = lc.loadCommandLine(args=data[0])
       self.assertEqual(result,data[1])
 

@@ -21,6 +21,8 @@
 
 """liftingcalc: is module/script for managing weights and progressions"""
 
+import string
+
 def loadCommandLine (args=None):
   """returns modes, sets, reps, load_profiles,
   where:
@@ -30,7 +32,6 @@ def loadCommandLine (args=None):
     reps = integer for how many times a lift is done with that weight_load
     load_profiles = array of the load and the weight configurations to get there
   """
-  import string
   from optparse import OptionParser
   sort_types = ('total_load','set_load','rep_load','weight_load')
   sort_types_string = '['+string.join(sort_types,'|')+']'
@@ -65,47 +66,96 @@ def loadCommandLine (args=None):
   sets = parseNumbers(options.set_range,integer=True)
 
   if options.barbell_load:
-    load_profiles = barbellOptions()
+    load_profiles = barbellOptions(float(options.barbell_load),
+      parseNumbers(options.plates_load))
   elif options.dumbell_load:
     load_profiles = dumbellOptions()
   elif options.plates_load:
     load_profiles = weightLoadOptions(options.plates_load)
   elif options.load_range:
-    load_profiles = simpleLoadOptions(options.load_range)
+    load_profiles = simpleLoadOptions(parseNumbers(options.load_range))
 
   return (modes, sets, reps, load_profiles)
 
 def barbellOptions (bar,plates):
   """return the load options based on the bar, and series_of_plates,
   assume they all are symetric plates 2x what was given"""
+  index = {}
   result = []
+  result.append([bar,[[bar]]])
+  for plate_config in plateConfigs(plates):
+    bb_config = [bar] + 2*plate_config
+    load = sum(bb_config)
+    if load in index:
+      result[index[load]][1].append(bb_config)
+    else:
+      result.append([load,[bb_config]])
+      index[load] = len(result) - 1
   return result
 
 def dumbellOptions (bar,plates):
   """return the load options based on the bar, and series_of_plates,
   assume a pair of dumbells and symetric plates 4x what was given"""
+  index = {}
   result = []
+  result.append([2*bar,[2*[bar]]])
+  for plate_config in plateConfigs(plates):
+    db_config = 2*[bar] + 4*plate_config
+    load = sum(db_config)
+    if load in index:
+      result[index[load]][1].append(db_config)
+    else:
+      result.append([load,[db_config]])
+      index[load] = len(result) - 1
   return result
 
 def weightLoadOptions (weights):
-  """return the load options based on series of addable weights"""
+  """returns the load options of just set of plates"""
   result = []
-  for load in parseNumbers(weights):
-    result.append()
+  index = {}
+  for plate_config in plateConfigs(weights):
+    load = sum(plate_config)
+    if load in index:
+      result[index[load]][1].append(plate_config)
+    else:
+      result.append([load,[plate_config]])
+      index[load] = len(result) - 1
   return result
+
+def plateConfigs (plates):
+  """returns and array of all possible permutations of weights,
+  sorted from largest to smallest"""
+  result = []
+  n = 0
+  while n < len(plates):
+    remainder = list(plates)
+    if len(remainder) > 0:
+      plate = remainder.pop(n)
+      for config in plateConfigs(remainder):
+	plate_config = [plate] + config
+	plate_config.sort(reverse=True)
+        result.append(plate_config)
+      result.append([plate])
+    n += 1
+  result.sort()
+  return uniqueList(result)
+
 
 def simpleLoadOptions (weights):
   """return the load options for non-addable weights in the form [[load1,[weight1],[load2,[weight2]]"""
   result = []
+  for load in weights:
+    result.append([load,[[load]]])
   return result
 
-def parseNumbers (string,integer=False):
+def parseNumbers (istring,integer=False):
    """take a number string and return an array,
    where , seperates descrete elements and - seperates integer ranges"""
    array = []
-   if not string:
+   if not istring or istring == None:
      return array
-   for number in string.split(','):
+   astring = str(istring)
+   for number in astring.split(','):
      if '-' in number:
        start, stop = number.split('-')
        array.extend(range(int(start),int(stop)+1))
@@ -114,6 +164,13 @@ def parseNumbers (string,integer=False):
      else:
        array.append(float(number))
    return array
+
+def uniqueList(seq):  
+    """give it a list and it will return a list of unqiue elements,
+    even if the elements themselves are lists."""
+    noDupes = [] 
+    [noDupes.append(i) for i in seq if not noDupes.count(i)] 
+    return noDupes
 
 # Main for script mode
 if __name__ == "__main__":
