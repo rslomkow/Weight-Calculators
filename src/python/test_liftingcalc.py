@@ -34,9 +34,9 @@ class KnownValues (unittest.TestCase):
       # barbell mode simple
       [['-b','18'],({'sort': 'total_load'}, [1], [1], [[18, [[18]]]])],
       # barbell mode than one solution
-      [['-b','18','-p','5,5,10','-s','2','-o','weight_load'],({'sort': 'weight_load'}, [2], [1], [[18, [[18]]], [28, [[18,5,5]]], [38, [[18,5,5,5,5],[18,10,10]]],[48, [[18,10,5,10,5]]],[58,[18,10,5,5,10,5,5]]])],
+      [['-b','18','-p','5,5,10','-s','2','-o','weight_load'],({'sort': 'weight_load'}, [2], [1], [[18.0, [[18.0]]], [28.0, [[18.0,5.0,5.0]]], [38.0, [[18.0,5.0,5.0,5.0,5.0],[18.0,10.0,10.0]]],[48.0, [[18.0,10.0,5.0,10.0,5.0]]],[58.0,[[18.0,10.0,5.0,5.0,10.0,5.0,5.0]]]])],
       # dumbell mode sensible
-      [['-d','2.5','-r','2.5,5'],({'sort': 'total_load'}, [1], [5], [[5, [[2.5,2.5]]], [10, [[2.5,2.5,2.5,25]]], [25, [[2.5,5,5,2.5,5,5]]],[35, [[2.5,5,2.5,5,2.5,2.5,5,2.5,5,2.5]]]])],
+      [['-d','2.5','-r','5','-p','2.5,5'],({'sort': 'total_load'}, [1], [5], [[5.0, [[2.5, 2.5]]], [15.0, [[2.5, 2.5, 2.5, 2.5, 2.5, 2.5]]], [25.0, [[2.5, 2.5, 5.0, 5.0, 5.0, 5.0]]], [35.0, [[2.5, 2.5, 5.0, 2.5, 5.0, 2.5, 5.0, 2.5, 5.0, 2.5]]]])],
       # test the load option
       [['-l','10-12'],({'sort': 'total_load'}, [1], [1], [[10, [[10]]], [11, [[11]]], [12, [[12]]]])],
       ],
@@ -73,8 +73,20 @@ class KnownValues (unittest.TestCase):
       [[1,2],[[1],[2],[2,1]]],
       [[3,3],[[3],[3,3]]],
       ],
+    'appendLoad':[
+      [[],{},[1],[[1,[[1]]]]],
+      [[[1,[[1]]],[7,[[4,3]]]],{7:1,1:0},[4,4],[[1,[[1]]],[7,[[4,3]]],[8,[[4,4]]]]],
+      [[[1,[[1]]],[7,[[4,3]]],[8,[[4,4]]]],{1:0,7:1,8:2},[6,2],[[1,[[1]]],[7,[[4,3]]],[8,[[4,4],[6,2]]]]],
+      ],
     }
 
+  def testAppendLoad (self):
+    """making sure we can reuse appendLoad logic to add things to the load data-structure"""
+    for data in self.known_values['appendLoad']:
+      result = data[0]
+      lc.appendLoad(result,data[1],data[2])
+      self.assertEqual(result,data[3])
+    
   def testUniqueList (self):
     """confirming a list of non-unique items returns a unique list,
     even when the list of lists"""
@@ -91,42 +103,36 @@ class KnownValues (unittest.TestCase):
   def testParseNumbers (self):
     """confirming that the parsing of numbers works"""
     for data in self.known_values['parseNumbers']:
-      print "d:", data[0], data[1], data[2]
       result = lc.parseNumbers(data[0],integer=data[1])
       self.assertEqual(result,data[2])
 
   def testSimpleLoadOptions (self):
     """confirming we generate sane generic loads from plates"""
     for data in self.known_values['simpleLoadOptions']:
-      print "d:", data[0], data[1]
       result = lc.simpleLoadOptions(data[0])
       self.assertEqual(result,data[1])
 
   def testWeightLoadOptions (self):
     """confirming we generate sane generic loads from plates"""
     for data in self.known_values['weightLoadOptions']:
-      print "d:", data[0], data[1]
       result = lc.weightLoadOptions(data[0])
       self.assertEqual(result,data[1])
 
   def testBarbellOptions (self):
     """confirming we generate sane barbell loads"""
     for data in self.known_values['barbellOptions']:
-      print "d:", data[0], data[1], data[2]
       result = lc.barbellOptions(data[0],data[1])
       self.assertEqual(result,data[2])
 
   def testDumbellOptions (self):
     """confirming we generate sane dumbell loads"""
     for data in self.known_values['dumbellOptions']:
-      print "d:", data[0], data[1], data[2]
       result = lc.dumbellOptions(data[0],data[1])
       self.assertEqual(result,data[2])
 
   def testLoadCommandLine (self):
     """confirming that ability to command line functionality works"""
     for data in self.known_values['loadCommandLine']:
-      print "d: lCL:", data[0], data[1]
       result = lc.loadCommandLine(args=data[0])
       self.assertEqual(result,data[1])
 

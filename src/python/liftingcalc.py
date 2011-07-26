@@ -69,13 +69,23 @@ def loadCommandLine (args=None):
     load_profiles = barbellOptions(float(options.barbell_load),
       parseNumbers(options.plates_load))
   elif options.dumbell_load:
-    load_profiles = dumbellOptions()
+    load_profiles = dumbellOptions(float(options.dumbell_load),
+      parseNumbers(options.plates_load))
   elif options.plates_load:
-    load_profiles = weightLoadOptions(options.plates_load)
+    load_profiles = weightLoadOptions(parseNumbers(options.plates_load))
   elif options.load_range:
     load_profiles = simpleLoadOptions(parseNumbers(options.load_range))
 
   return (modes, sets, reps, load_profiles)
+
+def appendLoad (result, index, config):
+  """This adds a config to the result in appropriate format"""
+  load = sum(config)
+  if load in index:
+    result[index[load]][1].append(config)
+  else:
+    result.append([load,[config]])
+    index[load] = len(result) - 1
 
 def barbellOptions (bar,plates):
   """return the load options based on the bar, and series_of_plates,
@@ -85,12 +95,7 @@ def barbellOptions (bar,plates):
   result.append([bar,[[bar]]])
   for plate_config in plateConfigs(plates):
     bb_config = [bar] + 2*plate_config
-    load = sum(bb_config)
-    if load in index:
-      result[index[load]][1].append(bb_config)
-    else:
-      result.append([load,[bb_config]])
-      index[load] = len(result) - 1
+    appendLoad(result,index,bb_config)
   return result
 
 def dumbellOptions (bar,plates):
@@ -101,12 +106,7 @@ def dumbellOptions (bar,plates):
   result.append([2*bar,[2*[bar]]])
   for plate_config in plateConfigs(plates):
     db_config = 2*[bar] + 4*plate_config
-    load = sum(db_config)
-    if load in index:
-      result[index[load]][1].append(db_config)
-    else:
-      result.append([load,[db_config]])
-      index[load] = len(result) - 1
+    appendLoad(result,index,db_config)
   return result
 
 def weightLoadOptions (weights):
@@ -114,12 +114,7 @@ def weightLoadOptions (weights):
   result = []
   index = {}
   for plate_config in plateConfigs(weights):
-    load = sum(plate_config)
-    if load in index:
-      result[index[load]][1].append(plate_config)
-    else:
-      result.append([load,[plate_config]])
-      index[load] = len(result) - 1
+    appendLoad(result,index,plate_config)
   return result
 
 def plateConfigs (plates):
@@ -174,5 +169,5 @@ def uniqueList(seq):
 
 # Main for script mode
 if __name__ == "__main__":
-  (modes, sets, reps, load_profiles) = loadCommandLine()
-  print (modes, sets, reps, load_profiles)
+  (config, sets, reps, load_profiles) = loadCommandLine()
+  print (config, sets, reps, load_profiles)
